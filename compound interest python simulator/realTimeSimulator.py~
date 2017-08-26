@@ -1,0 +1,110 @@
+import sys
+import time
+
+
+def compoundedInterestCalculatorTotal(principal, interestRate, timesCompoundedYearly, yearsBorrowed):
+    ## @params
+    ## principal - initial amount borrowed
+    ## interestRate - anual interest rate
+    ## timesCompoundedYearly - number of times the interest is compounded yearly
+    ## yearsBorrowed - number of years the amount is borrowed for
+    ## @returns Amount of money accumulated after n years, including interest
+    
+    oneNum = 1 + (interestRate/timesCompoundedYearly)
+    expNum = timesCompoundedYearly * yearsBorrowed
+    result = oneNum ** expNum
+
+    return (principal * result)
+
+def interestCalculator(principal, interestRate, timesCompoundedYearly, yearsBorrowed):
+    ## @params
+    ## principal - initial amount borrowed
+    ## interestRate - anual interest rate
+    ## timesCompoundedYearly - number of times the interest is compounded yearly
+    ## yearsBorrowed - number of years the amount is borrowed for
+    ## @returns the interest that has been accumulated over the yearsBorrowed
+
+    return compoundedInterestCalculatorTotal(principal, interestRate, timesCompoundedYearly, yearsBorrowed) - principal
+
+def formatSim(interval, interest, totalDue):
+
+    
+    formatting = "\n|  {0:" + str(len(interval)) + "}  |||  {1:5.2f}  |  {2:5.2f}  \t|\n"
+    formatting = formatting.format(interval, interest, totalDue)
+    lineLen = len(formatting)
+    horozontalLine = "-" * lineLen
+    output = formatting + horozontalLine
+    
+    return output, lineLen
+
+
+def interestGrowthSim(principal, interestRate, timesCompoundedYearly, hoursRan):
+    incrementer = 0
+    HOURS_IN_A_YEAR = 8760
+    yearsBorrowed = hoursRan/ HOURS_IN_A_YEAR
+    timeLeft = yearsBorrowed * timesCompoundedYearly
+    displayNumber = 1
+    startTime = time.time()
+    
+    # branches to catch common timesCompoundedYearly or increment from [1, timesCompoundedYearly]
+    intervalUnit = "\t"
+    if int(timesCompoundedYearly) == 12:
+        intervalUnit = "month"
+    elif int(timesCompoundedYearly) == 52:
+        intervalUnit = "week"
+    elif int(timesCompoundedYearly) == 365:
+        intervalUnit = "day"
+    elif int(timesCompoundedYearly) == 1:
+        intervalUnit = "year"
+    
+        
+    print("start:\t", startTime)
+    #loop to continually decrement timeLeft and calculate metrics
+    curTime = 0
+    counter = 0
+    while(float(curTime) < float(startTime + (hoursRan * 3600))):
+
+        curTime = time.time()
+        print("cur:\t",curTime,"\t","start",(startTime + hoursRan))
+        #calculate metrics
+        timeSpan = lambda t: t/timesCompoundedYearly
+        
+        interest = interestCalculator(principal, interestRate, timesCompoundedYearly, timeSpan(incrementer))
+        totalDue = compoundedInterestCalculatorTotal(principal, interestRate, timesCompoundedYearly, timeSpan(incrementer))
+        #format/print metrics
+        interval = str(intervalUnit) + " " + str(displayNumber)
+        output, lineLen = formatSim(interval, interest, totalDue)
+
+        if incrementer == 0:
+            print(str(lineLen) + output)
+        else:
+            print(output)
+
+        incrementer += 1
+        displayNumber += 1
+        time.sleep(1)
+        print("\n COUNTER:\t",counter,"\n")
+
+# MAIN
+runFunction = True
+
+if len(sys.argv) != 4:
+    print("please enter the proper number of arguments")
+    print("arg 1: principal, arg 2: interest rate, arg 3: program runtime in hours")
+
+else:
+
+    for i in range(len(sys.argv)):
+        if i == 1:
+            continue
+
+        if type(sys.argv[i]) == "<class 'str'>":
+            print("the argument", sys.argv[i], "is a string, which is invalid")
+            runFunction = False
+
+    if runFunction == False:
+        print("the arguments to this program must be floats or integers")
+
+    if runFunction == True:
+        SECONDS_IN_A_YEAR = 31500000
+        interestGrowthSim(float(sys.argv[1]),float(sys.argv[2]), float(SECONDS_IN_A_YEAR), float(sys.argv[3]))

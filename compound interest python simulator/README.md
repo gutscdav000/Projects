@@ -1,0 +1,1 @@
+This is the readme file for my compound interest python simulator
