@@ -41,29 +41,58 @@ int pop() {
 
 }
 
-int stackOperator(char op, int first, int second) {
+float stackOperator(char op, int length) {
+  float result;
+  int numbers[length];
+  int i;
   
+  //pop all numbers from the stack since last operation and read them into an array
+  for(i = length - 1; i >= 0; i--) 
+    numbers[i] = pop();
+
+  //sets initial value for result FIRST ITERATION
   switch((int)op) {
   case 42:
-    return (second * first);
+    result = (((float)numbers[0]) * numbers[1]);
     break;
   case 43:
-    return (first + second);
+    result = (((float)numbers[0]) + numbers[1]);
     break;
   case 45:
-    return (second - first);
+    result =  (((float)numbers[0]) - numbers[1]);
     break;
   case 47:
-    return (second / first);
+    result = (((float)numbers[0]) / numbers[1]);
     break;
   default:
     exit(1);
     break;
   }
+  
+  //calculates result for array items [2,length]
+  for(i = 2; i < length; i++) {
+    
+    switch((int)op) {
+    case 42:
+      result = result * numbers[i];
+      break;
+    case 43:
+      result = result + numbers[i];
+      break;
+    case 45:
+      result = result - numbers[i];
+      break;
+    case 47:
+      result = result / numbers[i];
+      break;
+    }
+  }
+  return result;
 }
 
+
 int main(void) {
-  int returnValue = 0;
+  int stack_counter = 0;
   char cur;
 
   //initialize stack
@@ -81,6 +110,7 @@ int main(void) {
       if(isdigit(cur)) {
 	printf("pushing %d\n",(cur - 48));
 	push((cur - 48));
+	stack_counter++; //increment stack counter
       }
       // operate on the stack
       else if( cur == '/' || cur == '*' || cur == '+' || cur == '-') { 
@@ -88,10 +118,13 @@ int main(void) {
 	printf("+-*/\n");
 	
 	if(stack && stack->next) {
-	  int first = pop();
-	  int second = pop();
-	  result = stackOperator(cur, first, second);
+	  //int first = pop();
+	  //int second = pop();
+	  result = stackOperator(cur, stack_counter);
 	  push((int)result);
+	  //reset stack counter 
+	  //(1 because the one result from computation get's pushed back onto stack)
+	  stack_counter = 1; 
 	}
 	else {
 	  printf("the stack doesn't have enough numbers upon which to operate\n");

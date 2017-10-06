@@ -23,4 +23,4 @@ CELL *stack;
 void push(int val);
 int  pop();
 void stringInnitializer(char *);
-int stackOperator(char,int,int);
+float stackOperator(char,int);
