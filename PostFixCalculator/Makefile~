@@ -1,5 +1,5 @@
 cc = gcc
-flags = -g -Wall
+flags = -g
 rpn: rpn.o
 	$(cc) $(flags) rpn.o -o rpn
 rpn.o: rpn.c rpn.h

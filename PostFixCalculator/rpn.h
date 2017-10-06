@@ -20,7 +20,7 @@ typedef struct popReturn {
 CELL *stack;
 
 /* function prototypes */
-CELL * push(int val);
-popReturn * pop(CELL *);
-void stringInnitializer(char *p);
-int stackOperator(char op);
+void push(int val);
+int  pop();
+void stringInnitializer(char *);
+int stackOperator(char,int,int);
