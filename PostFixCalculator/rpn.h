@@ -24,3 +24,5 @@ void push(int val);
 int  pop();
 void stringInnitializer(char *);
 float stackOperator(char,int);
+void stackClearer();
+void stackPrinter();

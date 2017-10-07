@@ -90,6 +90,33 @@ float stackOperator(char op, int length) {
   return result;
 }
 
+void stackClearer() {
+  while(stack)
+    pop();
+  
+  return;
+}
+
+void stackPrinter() {
+  int i = 0;
+  CELL *copyStack = stack;
+  if(copyStack) {
+    printf("\tIndex\tValue\n");
+    printf("-------------------\n");
+  
+  while(copyStack) {
+    printf("\t%d\t%d\n",i, copyStack->val);
+    copyStack = copyStack->next;
+    i++;
+  }
+  printf("-------------------\n");
+  }
+  else {
+    printf("the stack is empty\n");
+  }
+  return;
+}
+
 
 int main(void) {
   int stack_counter = 0;
@@ -132,10 +159,29 @@ int main(void) {
 	
 	printf("after calculation %f\n stack value: %d\n", result, stack->val);
       }
-      else if(0) {
+      else if(isalpha(cur)) {
 	// this will be for p,f,c,q commands
+	switch(cur) {
+	case 'c':
+	  stackClearer();
+	  break;
+	case 'p':
+	  printf("peek:\t%d\n",stack->val);
+	  break;
+	case 'q':
+	  return 0;
+	  break;
+	case 'f':
+	  stackPrinter();
+	  break;
+	case EOF:
+	  return 0;
+	  break;
+	}
       }
+      // EOF isn't an alpha character so it needs its own stopping condition
+      else if(cur == EOF) return 0; 
     }
   }
   return 0;
-  }
+}
