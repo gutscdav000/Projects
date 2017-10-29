@@ -1,0 +1,45 @@
+import React, { Component } from 'react';
+import logo from './logo.svg';
+import './App.css';
+
+class App extends Component {
+  render() {
+    return (
+      <div className="App">
+        <header className="App-header">
+          <img src={logo} className="App-logo" alt="logo" />
+          <h1 className="App-title">Welcome to David\'s React Calculator</h1>
+        </header>
+        <div id="calc_buttons">
+         <div id="easy_row">
+            <button className="normalButton">7</button>
+            <button className="normalButton">8</button>
+            <button className="normalButton">9</button>
+            <button className="fatButtonOrange">Clear</button>
+         </div>
+         <div id="easy_row">
+            <button className="normalButton">4</button>
+            <button className="normalButton">5</button>
+            <button className="normalButton">6</button>
+            <button className="normalButton">*</button>
+            <button className="normalButton">/</button>
+         </div>
+         <div id="easy_row">
+            <button className="normalButton">1</button>
+            <button className="normalButton">2</button>
+            <button className="normalButton">3</button>
+            <button className="normalButton">-</button>
+            <button className="normalButton">+</button>
+         </div>
+         <div id="easy_row">
+            <button className="zeroButton">0</button>
+            <button className="fatButtonGreen">=</button>
+         </div>
+         
+        </div>
+      </div>
+    );
+  }
+}
+
+export default App;

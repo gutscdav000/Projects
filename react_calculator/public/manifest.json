@@ -1,0 +1,15 @@
+{
+  "short_name": "react calc",
+  "name": "David's React Calculator",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "./index.html",
+  "display": "standalone",
+  "theme_color": "#fb6f74",
+  "background_color": "#87ceff"
+}
