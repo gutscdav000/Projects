@@ -77,10 +77,8 @@ def interestGrowthSim(principal, interestRate, timesCompoundedYearly, yearsBorro
         
         #print the output unless it's the first time through the loop print the header too
         if incrementer == 0:
-            print("-----------------------------------------")
+            print(str(lineLen) + output + "\n")
             print("\n|  Time  |||  Interest  |  Total Due  \t|\n")
-            print("-----------------------------------------")
-            #print(str(lineLen) + output + "\n")
         else:
             print(output)
 
