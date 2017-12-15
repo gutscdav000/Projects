@@ -206,8 +206,8 @@ display_tetromino(tetromino_t *tet) {
   }
 
   attroff(COLOR_PAIR(tet->color[0]));
-  getch();
-  endwin();
+  //getch();
+  //endwin();
 }
 
 undisplay_tetromino(tetromino_t *tet) {
