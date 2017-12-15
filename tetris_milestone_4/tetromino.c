@@ -50,7 +50,7 @@ const tetromino_t tetromino_types[7] = {
    0,
    0,
    '%',
-   {0,0,0}},
+   {2,COLOR_RED,COLOR_RED}},
   {"tee",
    {{0,0,0,0}, 
     {1,1,1,0},
@@ -59,7 +59,7 @@ const tetromino_t tetromino_types[7] = {
    0,
    0,
    '%',
-   {0,0,0}},
+   {3,COLOR_MAGENTA,COLOR_MAGENTA}},
   {"zigzag_l",
    {{0,0,1,0}, 
     {0,1,1,0},
@@ -68,7 +68,7 @@ const tetromino_t tetromino_types[7] = {
    0,
    0,
    '%',
-   {0,0,0}},
+   {4,COLOR_CYAN,COLOR_CYAN}},
   {"zigzag_r",
    {{0,1,0,0}, 
     {0,1,1,0},
@@ -77,7 +77,7 @@ const tetromino_t tetromino_types[7] = {
    0,
    0,
    '%',
-   {0,0,0}},
+   {5,COLOR_GREEN,COLOR_GREEN}},
   {"lform_l",
    {{0,0,1,0}, 
     {0,0,1,0},
@@ -86,7 +86,7 @@ const tetromino_t tetromino_types[7] = {
    0,
    0,
    '%',
-   {0,0,0}},
+   {6,COLOR_YELLOW,COLOR_YELLOW}},
   {"lform_r",
    {{0,1,0,0}, 
     {0,1,0,0},
@@ -95,7 +95,7 @@ const tetromino_t tetromino_types[7] = {
    0,
    0,
    '%',
-   {0,0,0}},
+   {7,COLOR_BLUE,COLOR_BLUE}},
   {"pipe",
    {{0,1,0,0},
     {0,1,0,0},
@@ -104,7 +104,7 @@ const tetromino_t tetromino_types[7] = {
    0,
    0,
    '%',
-   {0,0,0}}
+   {8,1000,1000}}
 };
 
 int check_collision (tetromino_t *tet) {
@@ -189,6 +189,13 @@ tetromino_t *create_tetromino (int initial_x, int initial_y) {
 }
 
 display_tetromino(tetromino_t *tet) {
+  
+  // for color
+  //start_color();
+  //init_pair(tet->color[0], tet->color[1], tet->color[3]);
+  attron(COLOR_PAIR(tet->color[0]));
+  
+  // displays tetromino
   int x,y;
   for (x=0;x<4;x++) {
     for (y=0;y<+4;y++) {
@@ -197,9 +204,14 @@ display_tetromino(tetromino_t *tet) {
       }
     }
   }
+
+  attroff(COLOR_PAIR(tet->color[0]));
+  getch();
+  endwin();
 }
 
 undisplay_tetromino(tetromino_t *tet) {
+ 
   int x,y;
   for (x=0;x<4;x++) {
     for (y=0;y<+4;y++) {
@@ -208,7 +220,7 @@ undisplay_tetromino(tetromino_t *tet) {
       }
     }
   }
-}
+ }
 
 int destroy_tetromino(tetromino_t *tet) {
   free(tet);

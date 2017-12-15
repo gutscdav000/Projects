@@ -5,9 +5,9 @@
  * Author: Bryce Himebaugh
  * Completed by: David Gutsch 
  * Created: Tue Sep  6 11:08:59 2016
- * Last-Updated: 08/26/2017
+ * Last-Updated: 012/15/2017
  *           By: David Gutsch
- *     Update #: 0
+ *     Update #: 3
  * Keywords: 
  * Compatibility: 
  * 
@@ -82,7 +82,18 @@ highscore_t *game(highscore_t *highscores) {
       break;
     case SPLASH_SCREEN:
       initscr();
+      //enable color
       start_color();
+      // initialize color pairs
+      init_pair(w->color[0], w->color[1], w->color[2]);
+      init_pair(2,COLOR_RED,COLOR_RED );
+      init_pair(3, COLOR_MAGENTA,COLOR_MAGENTA);
+      init_pair(4, COLOR_CYAN,COLOR_CYAN);
+      init_pair(5, COLOR_GREEN,COLOR_GREEN);
+      init_pair(6, COLOR_YELLOW,COLOR_YELLOW);
+      init_pair(7, COLOR_BLUE,COLOR_BLUE);
+      init_pair(8, COLOR_WHITE,COLOR_WHITE);
+
       nodelay(stdscr, FALSE);
       getmaxyx(stdscr,y,x);
       mvprintw(2,x/2-5,"%s", "Welcome Friend");
@@ -109,7 +120,7 @@ highscore_t *game(highscore_t *highscores) {
       else {
 	current = create_tetromino ((w->upper_left_x+(w->width/2)), w->upper_left_y);
 	next = create_tetromino (w->upper_left_x - 15, w->upper_left_y + 10);
-        mvprintw(6, w->upper_left_x - 25, "*** Next Tetromino ***");
+	mvprintw(6, w->upper_left_x - 25, "*** Next Tetromino ***");
         display_tetromino(next);
       }
 
@@ -198,9 +209,8 @@ highscore_t *game(highscore_t *highscores) {
       mvprintw(3,x/2-5,"#############");
       mvprintw(16,x/2-5,"Hit q to exit");
       
-      
+      // prints the top 10 scores without print highscores function
       int i;
-       
       highscore_t temp_hs = *highscores;
       
       for(i = 0; i < 9; i++) {

@@ -5,9 +5,9 @@
  * Author: Bryce Himebaugh
  * Maintainer: 
  * Created: Tue Sep  6 14:10:06 2016
- * Last-Updated: 
+ * Last-Updated: 12/15/2017
  *           By: 
- *     Update #: 0
+ *     Update #: 3
  * Keywords: 
  * Compatibility: 
  * 
@@ -46,14 +46,23 @@ well_t *init_well(int upper_left_x, int upper_left_y, int width, int height) {
   w->width = width;
   w->height = height;
   w->draw_char = '#';
-  w->color[0] = 0;
-  w->color[1] = 0;
-  w->color[2] = 0;
+  //  w->color[0] = 255;
+  //w->color[1] = 255;
+  //w->color[2] = 255;
+  w->color[0] = 1;
+  w->color[1] = COLOR_YELLOW;
+  w->color[2] = COLOR_MAGENTA;
+
   return (w);
 }
 
 void draw_well(well_t *w) {
   int row_counter, column_counter;
+  
+  // color the well
+  init_pair(w->color[0], w->color[1], w->color[2]);
+  attron(COLOR_PAIR(w->color[0]));
+
   // Draw left side of well
   for (column_counter=w->upper_left_y;column_counter<=(w->upper_left_y + w->height);column_counter++) {
     mvprintw(column_counter,w->upper_left_x,"%c",w->draw_char);
@@ -68,6 +77,8 @@ void draw_well(well_t *w) {
   for (row_counter=w->upper_left_x;row_counter<=(w->upper_left_x + w->width);row_counter++) {
     mvprintw(w->upper_left_y + w->height,row_counter,"%c",w->draw_char);
   }
+
+  attroff(COLOR_PAIR(w->color[0])); //turns off color
 }
 
 int prune_well(well_t * well) {
