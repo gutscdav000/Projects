@@ -50,6 +50,12 @@ NOTES TO ALL USERS:
   and try restarting your jupyter notebook, I've found that in most cases this fixes the
   issue. I think most of the time it is the plotly library being dodgy, but I have found 
   instances where it was quandl. If you want to try installing just plotly and restarting 
-  the jupyter notebook this might save you a little time. 
+  the jupyter notebook this might save you a little time.
+  
+- crypto_data_vizualization.py only exists so that you may read the code after you clone it
+  to your local machine and before you have the software dependencies taken care of. Github
+  is really nice and can support jupyter notebooks, but your local machine may not know how 
+  to open a .ipynb file
+
   
   
