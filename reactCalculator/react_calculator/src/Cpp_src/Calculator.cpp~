@@ -1,0 +1,70 @@
+
+
+#include <iostream>
+#include "Calculator.h"
+//#include <emscripten/bind.h>
+
+using namespace emscripten;
+using namespace std;
+
+class Calculator {
+
+public: 
+  CELL *stack;
+  
+  construct {
+    // set initial val to 0 and next to null
+    stack->val = 0;
+    stack->next = NULL;
+  }
+    
+};
+
+//Binding code 
+EMSCRIPTEN_BINDINGS(Calculator) {
+  class_<Calculator>("Calculator")
+    .constructor<>()
+    .class_function("push", &Calculator::push)
+    .class_function("pop", &Calculator::pop)
+    .class_function("stackOperator", &Calculator::stackOperator)
+    .property("stack", &Calculator)
+}
+
+
+void Calculator::push(int val) {
+  CELL *c = (CELL *)malloc(sizeof(CELL));
+
+  if(c) {
+    c->val = val;
+    c-> next = stack;
+    stack = c; // pushes new cell on stack
+  } else { /*handle error*/
+    printf("something went wront:\n cell memory did not get allocated properly\n");
+    exit(1);
+  }
+}
+
+int Calculator::pop() {
+  CELL *c = stack;
+  
+  if(c) {
+    stack = stack->next; //pop
+    int val = c->val;
+    free(c);
+    return val;
+  } else {
+    printf("The stack is empty\n");
+    exit(1);
+  }
+}
+
+float Calculator::stackOperator(char op, int length) {
+
+}
+
+void Calculator::stackClearer() {
+
+}
+
+
+   
