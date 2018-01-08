@@ -10,6 +10,7 @@ py.init_notebook_mode(connected = True)
 
 #purpose: download and cache a Quandl dataseries
 #signature: get_quandle_data(quandl_id: ) -> df: pandas dataframe
+## *** quandl API key = WZpC82bNrwpdw59PaRK1
 def get_quandl_data(quandl_id):
     home = os.getcwd()
     
@@ -34,7 +35,7 @@ def get_quandl_data(quandl_id):
         df.to_pickle(cache_path)
         print('Cached {} at {}'.format(quandl_id, cache_path))
         
-    os.chdir('../') # not sure if this is cool or not
+    os.chdir('../') 
     return df
 
 
@@ -115,10 +116,14 @@ def get_json_data(json_url, cache_path):
 def get_crypto_data(poloniex_pair):
     BASE_POLO_URL = 'https://poloniex.com/public?command=returnChartData&currencyPair={}&start={}&end={}&period={}'
     start_date = datetime.strptime('2015-01-01', '%Y-%m-%d') # get data from start of 2015
-    end_date = datetime.now() 
+    print('START DATE:::', start_date)
+    end_date = datetime.now()
+    print('END DATE::: ', end_date)
     period = 86400 # pull daily data (86,400 seconds per day)
     
     json_url = BASE_POLO_URL.format(poloniex_pair, start_date.timestamp(), end_date.timestamp(), period)
+    #json_url = BASE_POLO_URL.format(poloniex_pair, start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'), period)
+    
     data_df = get_json_data(json_url, poloniex_pair)
     data_df = data_df.set_index('date')
     return data_df
@@ -128,7 +133,7 @@ def get_crypto_data(poloniex_pair):
 
 #------------- MAIN --------------
 # exchange info
-exchanges = ['KRAKEN','COINBASE', 'BITSTAMP','ITBIT']
+exchanges = ['KRAKEN','COINBASE', 'BITSTAMP','ITBIT','OKCOIN', 'GETBTC','COINSBANK']
 exch_data = {}
 
 # retrieve exchange data and read into dictionary
@@ -178,5 +183,4 @@ combined_df = merge_dfs_on_column(list(alt_data.values()), list(alt_data.keys())
 combined_df['BTC'] = btc_usd_datasets['avg_btc_price_usd']
 # chart alt coins (LOG)
 df_scatter(combined_df, 'Alternate Currency Prices (USD)', seperate_y_axis = False, y_axis_label = 'Coin Value (USD)', scale = 'linear')
-
 
