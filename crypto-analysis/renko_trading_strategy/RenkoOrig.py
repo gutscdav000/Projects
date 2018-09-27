@@ -28,10 +28,7 @@ class Renko:
     # integer value for size of renko blocks
     #BLOCK_SIZE 
 
-    # nested list containing input data [raw_price : float, price_difference : float, block_magnitude : float]
-    # raw_price = the actual price value
-    # price_difference = this_price - last_price
-    # block_magnitude = price_difference / BLOCK_SIZE
+    # list of tuples containing input data (raw_price : float, raw_price / BLOCK_SIZE : float)
     #self.raw_data
 
     # list of tuples containing renko blocks (renko_block: 1 or -1, action None or "buy" or "sell")
@@ -49,68 +46,11 @@ class Renko:
         self.BLOCK_SIZE = blockSize
 
         if dataStream is not None:
-
-            # find price diff
-            numpy_data = dataStream.tolist()
-            price_diff = [ numpy_data[i] - numpy_data[i - 1] for i in range(len(numpy_data)) if i > 0]
-            print(price_diff)
-            print("len numpy_prices:", len(numpy_data), "len price_diff:", len(price_diff))
-            self.raw_data = [[numpy_data[0], 0, 0]] # add the first elem since there is no price diff
-
-            #fill raw data field
-            for i in range(1, len(numpy_data)):
-                self.raw_data.append([numpy_data[i], price_diff[i - 1] , price_diff[i - 1] / self.BLOCK_SIZE])
-
-            print("raw_data:\n",self.raw_data)
-
-            # now organize renko data
             self.renko_data = []
+            #fill raw data field
+            for price in np.nditer(dataStream, order='C'):
+                self.renko_data.append((price, price / self.BLOCK_SIZE))
 
-            renko_bricks = []
-            for lst in self.raw_data:
-                renko_mag = lst[2]
-                
-                if renko_mag > 0:
-                    #not a full block increment so round down
-                    renko_mag = int(math.floor(renko_mag))
-                    # add delta number of blocks to set
-                    renko_bricks.extend([1]*renko_mag)
-
-                else:
-                    # not a full block so "round down", technically rounding up
-                    renko_mag = int(math.ceil(renko_mag))
-                    # add delta number of blocks to set
-                    renko_bricks.extend([-1]*abs(renko_mag))
-
-
-            print("renko bricks:\n", renko_bricks)
-
-            rolling_window = []
-            # evaluate and build up renko_data
-            for i in range(len(renko_bricks)):
-                if i < 5:
-                    rolling_window.append(renko_bricks[i])
-                    self.renko_data.append([renko_bricks[i], None])
-
-                else:
-                    # pattern match
-                    # sell
-                    if rolling_window == [1, 1, -1, -1, -1]:
-                        self.renko_data.append([renk_bricks[i], "sell"])
-                    # buy
-                    elif rolling_window == [-1, -1, -1, 1, 1]:
-                        self.renko_data.append([renk_bricks[i], "buy"])
-                    # no pattern
-                    else:
-                        self.renko_data.append([renko_bricks[i], None])
-
-                    # remove first element & add next
-                    if i + 1 < len(renko_bricks):
-                        rolling_window.pop(0)
-                        rolling_window.append(i + 1)
-
-            print("renko_data:\n", self.renko_data)
-            
 
     
     # purpose: download and cache a Quandl dataseriews
@@ -148,7 +88,7 @@ class Renko:
 
     # purpose: this function takes a dataframe and a block size and builds a matplotlib graph
     # signature: plot_renko(df: dataframe, brick_size: int) -> graph
-    def plot_renko(self ):
+    def plot_renko(self, data, brick_size):
         fig = plt.figure(1)
         fig.clf()
         axes = fig.gca()
@@ -158,6 +98,19 @@ class Renko:
         prev_num = 0
         bricks = []
 
+        for delta in data:
+        
+            if delta > 0:
+                #not a full block increment so round down
+                delta = int(math.floor(delta))
+                # add delta number of blocks to set
+                bricks.extend([1]*delta)
+
+            else:
+                # not a full block so "round down", technically rounding up
+                delta = int(math.ceil(delta))
+                # add delta number of blocks to set
+                bricks.extend([-1]*abs(delta))
 
         # vars to maintain plot size limits
         ind = 0
@@ -165,12 +118,7 @@ class Renko:
         maxPrevNum = prev_num
 
         # build plot one block at a time and increment or update plot size vars
-        for index, lst in enumerate(self.renko_data):
-        #for i in range(len(self.renko_data)):
-            
-            number = lst[0]
-            action = lst[1]
-            
+        for index, number in enumerate(bricks):
             if number == 1:
                 facecolor='green'
             else:
@@ -179,24 +127,23 @@ class Renko:
             prev_num += number
             
             renko = Rectangle(
-                (index, prev_num * self.BLOCK_SIZE), 1, self.BLOCK_SIZE,
+                (index, prev_num * brick_size), 1, brick_size,
                 facecolor=facecolor, alpha=0.5
             )
 
             ind = index
 
-            if prev_num * self.BLOCK_SIZE < minPrevNum:
-                minPrevNum = prev_num * self.BLOCK_SIZE
-            if prev_num * self.BLOCK_SIZE > maxPrevNum:
-                maxPrevNum = prev_num * self.BLOCK_SIZE
+            if prev_num * brick_size < minPrevNum:
+                minPrevNum = prev_num * brick_size
+            if prev_num * brick_size > maxPrevNum:
+                maxPrevNum = prev_num * brick_size
                         
             axes.add_patch(renko)
 
         # set plot size 
-        axes.set_xlim(0, ind + self.BLOCK_SIZE)
+        axes.set_xlim(0, index + brick_size)
         axes.set_ylim(minPrevNum - 10, maxPrevNum + 10)
-
-        plt.savefig("class_test.png")
+        
         return plt
 
     
@@ -258,23 +205,21 @@ if __name__ == "__main__":
 
     nyse_df = get_quandl_data("URC/NYSE_ADV")
     dow_df = get_quandl_data("FRED/M1109BUSM293NNBR")
-    
+        
 
-    
-    #dow_df['day_diff'] = dow_df['VALUE'] - dow_df['VALUE'].shift(1)
-    #dow_df.dropna(inplace=True)
-    #dow_df['bricks'] = dow_df.loc[:, ('day_diff',)] / BRICK_SIZE
+    dow_df['day_diff'] = dow_df['VALUE'] - dow_df['VALUE'].shift(1)
+    dow_df.dropna(inplace=True)
+    dow_df['bricks'] = dow_df.loc[:, ('day_diff',)] / BRICK_SIZE
         
     #        dow_df['bricks'] = dow_df['bricks']
-    #bricks = dow_df[dow_df['bricks'] != 0]['bricks'].tail(5).values
+    bricks = dow_df[dow_df['bricks'] != 0]['bricks'].tail(5).values
 
        
 
-    #print(bricks)
-    
+    print(bricks)
+
     default = Renko(2)
-    renkoObject = Renko(30, dow_df['VALUE'].tail(60).values)
-    renkoObject.plot_renko()
+    renkoObject = Renko(2, bricks)
     
 #        plot = plot_renko(bricks, BRICK_SIZE)
 #        plot.savefig("dow_renko.png")
