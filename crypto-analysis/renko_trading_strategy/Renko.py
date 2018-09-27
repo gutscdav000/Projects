@@ -85,30 +85,48 @@ class Renko:
 
             print("renko bricks:\n", renko_bricks)
 
-            rolling_window = []
+
+            rolling_window = []    
             # evaluate and build up renko_data
             for i in range(len(renko_bricks)):
                 if i < 5:
                     rolling_window.append(renko_bricks[i])
                     self.renko_data.append([renko_bricks[i], None])
+                    
 
                 else:
-                    # pattern match
-                    # sell
-                    if rolling_window == [1, 1, -1, -1, -1]:
-                        self.renko_data.append([renk_bricks[i], "sell"])
+                # pattern match
+                # buy pop/append sell
+                    match = False
+
                     # buy
-                    elif rolling_window == [-1, -1, -1, 1, 1]:
-                        self.renko_data.append([renk_bricks[i], "buy"])
-                    # no pattern
-                    else:
-                        self.renko_data.append([renko_bricks[i], None])
+                    if rolling_window == [-1, -1, -1, 1, 1]:
+                        self.renko_data.append([renko_bricks[i], "buy"])
+                        match = True
 
                     # remove first element & add next
                     if i + 1 < len(renko_bricks):
                         rolling_window.pop(0)
-                        rolling_window.append(i + 1)
+                        rolling_window.append(renko_bricks[i + 1])
+                    
+                    # sell
+                    print(i, "\t", rolling_window)
+                    if rolling_window == [1, 1, -1, -1, -1]:
+                        self.renko_data.append([renko_bricks[i], "sell"])
+                        match = True
+                        
+                    # no pattern
+                    if not match:
+                        self.renko_data.append([renko_bricks[i], None])
 
+                    # remove first element & add next
+                    #if i + 1 < len(renko_bricks):
+                    #    rolling_window.pop(0)
+                    #    rolling_window.append(renko_bricks[i + 1])
+
+
+            tmp = self.renko_data
+            self.renko_data.extend(tmp)
             print("renko_data:\n", self.renko_data)
             
 
@@ -165,25 +183,58 @@ class Renko:
         maxPrevNum = prev_num
 
         # build plot one block at a time and increment or update plot size vars
-        for index, lst in enumerate(self.renko_data):
-        #for i in range(len(self.renko_data)):
+        actionIndicator = -1
+        #for index, lst in enumerate(self.renko_data):
+        for i in range(len(self.renko_data)):
             
-            number = lst[0]
-            action = lst[1]
-            
-            if number == 1:
+            number = self.renko_data[i][0]
+            action = self.renko_data[i][1]
+
+            # set block color
+            # color for buy and sell
+            if action is not None:
+                if action == "sell":
+                    facecolor = "orange"
+                else:
+                    facecolor = "blue"
+                
+            # colors for no action
+            elif number == 1:
                 facecolor='green'
             else:
                 facecolor='red'
+            '''    
+            if i + 4 < len(self.renko_data) and (self.renko_data[i + 4][1] is not None or actionIndicator >= 0):
+                if self.renko_data[i + 4][1] == "buy":
+                    facecolor = 'blue'
+                    actionIndicator = 3
+                elif self.renko_data[i + 4][1] == "sell":
+                    facecolor = 'orange'
+                    actionIndicator = 3
+                # overly complex logic part
+                elif self.renko_data[i + 4 - actionIndicator][1] == "buy":
+                    facecolor = 'blue'
+                    actionIndicator -= 1
+
+                elif self.renko_data[i + 4 - actionIndicator][1] == "sell":
+                    facecolor = 'orange'
+                    actionIndicator -= 1
+
+                # reset actionIndicator
+                #if actionIndicator < 0:
+                #    actionIndicator = -1
+            '''
+            
+            
 
             prev_num += number
             
             renko = Rectangle(
-                (index, prev_num * self.BLOCK_SIZE), 1, self.BLOCK_SIZE,
+                (i, prev_num * self.BLOCK_SIZE), 1, self.BLOCK_SIZE,
                 facecolor=facecolor, alpha=0.5
             )
 
-            ind = index
+            ind = i
 
             if prev_num * self.BLOCK_SIZE < minPrevNum:
                 minPrevNum = prev_num * self.BLOCK_SIZE
