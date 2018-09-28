@@ -245,8 +245,9 @@ class Renko:
 
         # set plot size 
         axes.set_xlim(0, ind + self.BLOCK_SIZE)
-        axes.set_ylim(minPrevNum - 10, maxPrevNum + 10)
+        axes.set_ylim(minPrevNum - int(minPrevNum * .5), maxPrevNum + int(maxPrevNum * .5))
 
+        
         plt.savefig("class_test.png")
         return plt
 
