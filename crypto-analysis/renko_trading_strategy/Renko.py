@@ -53,15 +53,16 @@ class Renko:
             # find price diff
             numpy_data = dataStream.tolist()
             price_diff = [ numpy_data[i] - numpy_data[i - 1] for i in range(len(numpy_data)) if i > 0]
-            print(price_diff)
-            print("len numpy_prices:", len(numpy_data), "len price_diff:", len(price_diff))
+            #print(price_diff)
+            #print("len numpy_prices:", len(numpy_data), "len price_diff:", len(price_diff))
+            
             self.raw_data = [[numpy_data[0], 0, 0]] # add the first elem since there is no price diff
 
             #fill raw data field
             for i in range(1, len(numpy_data)):
                 self.raw_data.append([numpy_data[i], price_diff[i - 1] , price_diff[i - 1] / self.BLOCK_SIZE])
 
-            print("raw_data:\n",self.raw_data)
+            #print("raw_data:\n",self.raw_data)
 
             # now organize renko data
             self.renko_data = []
@@ -80,10 +81,11 @@ class Renko:
                     # not a full block so "round down", technically rounding up
                     renko_mag = int(math.ceil(renko_mag))
                     # add delta number of blocks to set
-                    renko_bricks.extend([-1]*abs(renko_mag))
+                    renko_bricks.extend([-1]*abs(renko_mag)) #??????????
+                    
 
 
-            print("renko bricks:\n", renko_bricks)
+            #print("renko bricks:\n", renko_bricks)
 
 
             rolling_window = []    
@@ -110,7 +112,7 @@ class Renko:
                         rolling_window.append(renko_bricks[i + 1])
                     
                     # sell
-                    print(i, "\t", rolling_window)
+                    #print(i, "\t", rolling_window)
                     if rolling_window == [1, 1, -1, -1, -1]:
                         self.renko_data.append([renko_bricks[i], "sell"])
                         match = True
@@ -125,10 +127,16 @@ class Renko:
                     #    rolling_window.append(renko_bricks[i + 1])
 
 
-            tmp = self.renko_data
-            self.renko_data.extend(tmp)
-            print("renko_data:\n", self.renko_data)
-            
+
+
+    #purpose: return the raw data list
+    def getRawData(self):
+        return self.raw_data
+
+        
+    #purpose: return the renko data list
+    def getRenkoData(self):
+        return self.renko_data
 
     
     # purpose: download and cache a Quandl dataseriews
@@ -151,6 +159,7 @@ class Renko:
             file = open(cache_path, 'rb')
             df = pickle.load(file)
             print('Loaded {} from cache'.format(quandl_id))
+            file.close()
             
         except (OSError, IOError) as e:
             
