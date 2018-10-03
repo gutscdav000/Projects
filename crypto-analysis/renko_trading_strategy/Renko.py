@@ -76,7 +76,7 @@ class Renko:
                     renko_mag = int(math.floor(renko_mag))
                     # add delta number of blocks to set
                     renko_bricks.extend([1]*renko_mag)
-
+                    
                 else:
                     # not a full block so "round down", technically rounding up
                     renko_mag = int(math.ceil(renko_mag))
@@ -218,34 +218,37 @@ class Renko:
             if len(bricks) == 0:
                 return
 
-            # if len(self.renko_data) > 5 check for position action
-            prevSize = len(self.renko_data)
-            temp = prevSize
-            for item in bricks:
-                if temp < 5:
-                    self.renko_data.append([item, None])
-                    temp += 1
-                else:
-                    self.renko_data.append([item, "unprocessed"])
 
+            prevLen = len(self.renko_data)
+            self.renko_data = []
 
-
-            rolling_window = []
-            if prevSize >= 4:
-                rolling_window.append(self.renko_data[prevSize - 4][0])
-                rolling_window.append(self.renko_data[prevSize - 3][0])
-                rolling_window.append(self.renko_data[prevSize - 2][0])
-                rolling_window.append(self.renko_data[prevSize - 1][0])
-                rolling_window.append(self.renko_data[prevSize][0])
-                prevSize += 1
-            else:
-                prevSize = 1
-
+            renko_bricks = []
+            for lst in self.raw_data:
+                renko_mag = lst[2]
                 
-            for i in range(prevSize - 1, len(self.renko_data)):
-                if i < 4:
-                    rolling_window.append(self.renko_data[i][0])
+                if renko_mag > 0:
+                    #not a full block increment so round down
+                    renko_mag = int(math.floor(renko_mag))
+                    # add delta number of blocks to set
+                    renko_bricks.extend([1]*renko_mag)
                     
+                else:
+                    # not a full block so "round down", technically rounding up
+                    renko_mag = int(math.ceil(renko_mag))
+                    # add delta number of blocks to set
+                    renko_bricks.extend([-1]*abs(renko_mag)) 
+                    
+
+
+
+            rolling_window = []    
+            # evaluate and build up renko_data
+            for i in range(len(renko_bricks)):
+                if i < 5:
+                    rolling_window.append(renko_bricks[i])
+                    self.renko_data.append([renko_bricks[i], None])
+                    
+
                 else:
                 # pattern match
                 # buy pop/append sell
@@ -253,35 +256,49 @@ class Renko:
 
 
                     # buy
-                    print("buy", len(rolling_window),  rolling_window, str(rolling_window == [-1, -1, -1, 1, 1]))
                     if rolling_window == [-1, -1, -1, 1, 1]:
-                        self.renko_data[i][1] = "buy"
+                        self.renko_data.append([renko_bricks[i], "buy"])
                         match = True
-                        # buyfunc
+                        ############
+                        if len(self.renko_data) > prevLen:
+                            ###### buy!!!
+                            print("buy")
 
                     # remove first element & add next
-                    if i + 1 < len(self.renko_data):
+                    if i + 1 < len(renko_bricks):
                         rolling_window.pop(0)
-                        rolling_window.append(self.renko_data[i + 1][0])
-
-                
-
-                    # sell
-                    print("sell", len(rolling_window), rolling_window, str(rolling_window == [1, 1, -1, -1, -1]))
-                    if rolling_window == [1, 1, -1, -1, -1]:
-                        self.renko_data[i][1] =  "sell"
-                        match = True
-                        #sellfunc
-
+                        rolling_window.append(renko_bricks[i + 1])
                     
+                    # sell
+                    if rolling_window == [1, 1, -1, -1, -1]:
+                        self.renko_data.append([renko_bricks[i], "sell"])
+                        match = True
+                        ############
+                        if len(self.renko_data) > prevLen:
+                               ####### sell!!!
+                               print("sell")
                         
                     # no pattern
                     if not match:
-                        self.renko_data[i][1] =  None
+                        self.renko_data.append([renko_bricks[i], None])
+ 
 
-                    print()
-                    print()
+    # purpospe: this function may be implemented to purchase as it is called on a buy action
+    def buyAction(self):
+        print("*" * 100)
+        print("BUY")
+        print("*" * 100)
+
+
+    # purpospe: this function may be implemented to sell as it is called on a sell action
+    def sellAction(self):
+        print("*" * 100)
+        print("SELL")
+        print("*" * 100)
+
         
+        
+                        
 
     # purpose: this function takes a dataframe and a block size and builds a matplotlib graph
     # signature: plot_renko(df: dataframe, brick_size: int) -> graph
