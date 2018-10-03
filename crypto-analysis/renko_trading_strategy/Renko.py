@@ -427,20 +427,18 @@ if __name__ == "__main__":
     nse_df = get_quandl_data("NSE/IBULISL")
 
     nse_df = get_quandl_data("NSE/IBULISL")
+
     clean_data = []
     # [high, low close]
     for index, row in nse_df.iterrows():
         clean_data.append([row['High'], row['Low'], row['Close']])
-        
-        r = Renko(10)
-        
-        for event in clean_data:
-            r.process_price_event(event[2])
+
+
+        #just price
+    price = [item[2] for item in clean_data]
+    price_ar = np.array(price)    
             
-
-            print("*" * 100)
-        print(r.getRenkoData())
+    r = Renko(10)
         
-
-
-
+    for event in clean_data:
+        r.process_price_event(event[2])
