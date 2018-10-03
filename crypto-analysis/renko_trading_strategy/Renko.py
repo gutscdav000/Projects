@@ -81,11 +81,9 @@ class Renko:
                     # not a full block so "round down", technically rounding up
                     renko_mag = int(math.ceil(renko_mag))
                     # add delta number of blocks to set
-                    renko_bricks.extend([-1]*abs(renko_mag)) #??????????
+                    renko_bricks.extend([-1]*abs(renko_mag)) 
                     
 
-
-            #print("renko bricks:\n", renko_bricks)
 
 
             rolling_window = []    
@@ -101,6 +99,7 @@ class Renko:
                 # buy pop/append sell
                     match = False
 
+
                     # buy
                     if rolling_window == [-1, -1, -1, 1, 1]:
                         self.renko_data.append([renko_bricks[i], "buy"])
@@ -112,7 +111,6 @@ class Renko:
                         rolling_window.append(renko_bricks[i + 1])
                     
                     # sell
-                    #print(i, "\t", rolling_window)
                     if rolling_window == [1, 1, -1, -1, -1]:
                         self.renko_data.append([renko_bricks[i], "sell"])
                         match = True
@@ -120,11 +118,13 @@ class Renko:
                     # no pattern
                     if not match:
                         self.renko_data.append([renko_bricks[i], None])
+        else:
+            # initialize variables
+            self.raw_data = [] 
+            self.renko_data = []
 
-                    # remove first element & add next
-                    #if i + 1 < len(renko_bricks):
-                    #    rolling_window.pop(0)
-                    #    rolling_window.append(renko_bricks[i + 1])
+                        
+                
 
 
 
@@ -171,11 +171,121 @@ class Renko:
         os.chdir('../')
         return df
 
+    #purpose: this function finds the average true range for a period given a Current High, Current Low, Previous Close data set
+    # signature: findATR(dataSet: nested list, widnowSize: int, setToBlockSize: bool) -> ATR block size value
+    # dataset: list where each inex is a list of the following values for the day: [High, Low, CLose]
+    # windowStart, windowEnd: the range of the dataset that you want to find the ATR of 
+    # setToBlockSize when true resets self.BLOCK_SIZE to the return value of ATR
+    def findATR(self, dataSet, windowStart, windowEnd, setToBlockSize = False):
+        trueValueAccum = 0
+        
+        for i in range(windowStart, windowEnd):
+            #                      ( high - low)                      abs(high - previous close)            abs(low - previous close)
+            trueValueAccum += max(dataSet[i][0] - dataSet[i][1], abs(dataSet[i][0] - dataSet[i - 1][2]), abs(dataSet[i][1] - dataSet[i - 1][2]))
 
+        
+        ATR = trueValueAccum / (windowEnd - windowStart)
+        
+        if setToBlockSize == True:
+            self.BLOCK_SIZE = int(ATR)
+
+        return ATR
+
+    #purpose: function that processes new data
+    def process_price_event(self, price):
+        i = len(self.raw_data)
+        if i == 0:
+            self.raw_data.append([price, 0, 0])
+            return
+
+        else:
+
+            diff = price - self.raw_data[-1][0]
+            renko_mag = (price - self.raw_data[-1][0]) / self.BLOCK_SIZE
+        
+            self.raw_data.append([price, diff , renko_mag])
+
+            
+            bricks = []
+            if renko_mag > 0:
+                bricks.extend([1] * int(math.floor(renko_mag)))
+            else:
+                bricks.extend([-1] * abs(int(math.ceil(renko_mag))))
+
+
+
+            # if len > 0 add to renko_data otherwise don't
+            if len(bricks) == 0:
+                return
+
+            # if len(self.renko_data) > 5 check for position action
+            prevSize = len(self.renko_data)
+            temp = prevSize
+            for item in bricks:
+                if temp < 5:
+                    self.renko_data.append([item, None])
+                    temp += 1
+                else:
+                    self.renko_data.append([item, "unprocessed"])
+
+
+
+            rolling_window = []
+            if prevSize >= 4:
+                rolling_window.append(self.renko_data[prevSize - 4][0])
+                rolling_window.append(self.renko_data[prevSize - 3][0])
+                rolling_window.append(self.renko_data[prevSize - 2][0])
+                rolling_window.append(self.renko_data[prevSize - 1][0])
+                rolling_window.append(self.renko_data[prevSize][0])
+                prevSize += 1
+            else:
+                prevSize = 1
+
+                
+            for i in range(prevSize - 1, len(self.renko_data)):
+                if i < 4:
+                    rolling_window.append(self.renko_data[i][0])
+                    
+                else:
+                # pattern match
+                # buy pop/append sell
+                    match = False
+
+
+                    # buy
+                    print("buy", len(rolling_window),  rolling_window, str(rolling_window == [-1, -1, -1, 1, 1]))
+                    if rolling_window == [-1, -1, -1, 1, 1]:
+                        self.renko_data[i][1] = "buy"
+                        match = True
+                        # buyfunc
+
+                    # remove first element & add next
+                    if i + 1 < len(self.renko_data):
+                        rolling_window.pop(0)
+                        rolling_window.append(self.renko_data[i + 1][0])
+
+                
+
+                    # sell
+                    print("sell", len(rolling_window), rolling_window, str(rolling_window == [1, 1, -1, -1, -1]))
+                    if rolling_window == [1, 1, -1, -1, -1]:
+                        self.renko_data[i][1] =  "sell"
+                        match = True
+                        #sellfunc
+
+                    
+                        
+                    # no pattern
+                    if not match:
+                        self.renko_data[i][1] =  None
+
+                    print()
+                    print()
+        
 
     # purpose: this function takes a dataframe and a block size and builds a matplotlib graph
     # signature: plot_renko(df: dataframe, brick_size: int) -> graph
-    def plot_renko(self ):
+    def plot_renko(self, fileName ):
         fig = plt.figure(1)
         fig.clf()
         axes = fig.gca()
@@ -212,30 +322,7 @@ class Renko:
                 facecolor='green'
             else:
                 facecolor='red'
-            '''    
-            if i + 4 < len(self.renko_data) and (self.renko_data[i + 4][1] is not None or actionIndicator >= 0):
-                if self.renko_data[i + 4][1] == "buy":
-                    facecolor = 'blue'
-                    actionIndicator = 3
-                elif self.renko_data[i + 4][1] == "sell":
-                    facecolor = 'orange'
-                    actionIndicator = 3
-                # overly complex logic part
-                elif self.renko_data[i + 4 - actionIndicator][1] == "buy":
-                    facecolor = 'blue'
-                    actionIndicator -= 1
-
-                elif self.renko_data[i + 4 - actionIndicator][1] == "sell":
-                    facecolor = 'orange'
-                    actionIndicator -= 1
-
-                # reset actionIndicator
-                #if actionIndicator < 0:
-                #    actionIndicator = -1
-            '''
             
-            
-
             prev_num += number
             
             renko = Rectangle(
@@ -257,7 +344,7 @@ class Renko:
         axes.set_ylim(minPrevNum - int(minPrevNum * .5), maxPrevNum + int(maxPrevNum * .5))
 
         
-        plt.savefig("class_test.png")
+        plt.savefig(fileName)
         return plt
 
     
@@ -313,29 +400,30 @@ if __name__ == "__main__":
     # notes on data streams:
     #   "URC/NYSE_ADV" : gets NYSE: number of stocks with prices advaancing data from Unicorn research corporation
     #   "FRED/M1109BUSM293NNBR" : gets DOW JOnes industrial
+    
 
     BRICK_SIZE = 2
     
 
     nyse_df = get_quandl_data("URC/NYSE_ADV")
     dow_df = get_quandl_data("FRED/M1109BUSM293NNBR")
-    
+    nse_df = get_quandl_data("NSE/IBULISL")
 
-    
-    #dow_df['day_diff'] = dow_df['VALUE'] - dow_df['VALUE'].shift(1)
-    #dow_df.dropna(inplace=True)
-    #dow_df['bricks'] = dow_df.loc[:, ('day_diff',)] / BRICK_SIZE
+    nse_df = get_quandl_data("NSE/IBULISL")
+    clean_data = []
+    # [high, low close]
+    for index, row in nse_df.iterrows():
+        clean_data.append([row['High'], row['Low'], row['Close']])
         
-    #        dow_df['bricks'] = dow_df['bricks']
-    #bricks = dow_df[dow_df['bricks'] != 0]['bricks'].tail(5).values
+        r = Renko(10)
+        
+        for event in clean_data:
+            r.process_price_event(event[2])
+            
 
-       
+            print("*" * 100)
+        print(r.getRenkoData())
+        
 
-    #print(bricks)
-    
-    default = Renko(2)
-    renkoObject = Renko(30, dow_df['VALUE'].tail(60).values)
-    renkoObject.plot_renko()
-    
-#        plot = plot_renko(bricks, BRICK_SIZE)
-#        plot.savefig("dow_renko.png")
+
+
