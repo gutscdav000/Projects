@@ -47,7 +47,8 @@ class Renko:
     # signature: Renko(block_size: int, dataStream: numpyArray) 
     def __init__(self, blockSize, dataStream = None):
         self.BLOCK_SIZE = blockSize
-
+        self.ATR = 0
+        
         if dataStream is not None:
 
             # find price diff
@@ -62,7 +63,6 @@ class Renko:
             for i in range(1, len(numpy_data)):
                 self.raw_data.append([numpy_data[i], price_diff[i - 1] , price_diff[i - 1] / self.BLOCK_SIZE])
 
-            #print("raw_data:\n",self.raw_data)
 
             # now organize renko data
             self.renko_data = []
@@ -138,6 +138,9 @@ class Renko:
     def getRenkoData(self):
         return self.renko_data
 
+    def setBlockSize(self, size):
+        self.BLOCK_SIZE = size
+
     
     # purpose: download and cache a Quandl dataseriews
     # signature: get_quandl_data(cuandl_id: ) -> df: panda dataframe
@@ -175,21 +178,30 @@ class Renko:
     # signature: findATR(dataSet: nested list, widnowSize: int, setToBlockSize: bool) -> ATR block size value
     # dataset: list where each inex is a list of the following values for the day: [High, Low, CLose]
     # windowStart, windowEnd: the range of the dataset that you want to find the ATR of 
-    # setToBlockSize when true resets self.BLOCK_SIZE to the return value of ATR
-    def findATR(self, dataSet, windowStart, windowEnd, setToBlockSize = False):
+    def findFirstATR(self, dataSet, windowSize):
         trueValueAccum = 0
+
         
-        for i in range(windowStart, windowEnd):
+        for i in range(windowSize):
             #                      ( high - low)                      abs(high - previous close)            abs(low - previous close)
             trueValueAccum += max(dataSet[i][0] - dataSet[i][1], abs(dataSet[i][0] - dataSet[i - 1][2]), abs(dataSet[i][1] - dataSet[i - 1][2]))
 
+
+        ATR = trueValueAccum / windowSize
+        self.ATR = ATR
+        self.ATR_WINDOW_SIZE = windowSize
         
-        ATR = trueValueAccum / (windowEnd - windowStart)
-        
-        if setToBlockSize == True:
-            self.BLOCK_SIZE = int(ATR)
 
         return ATR
+
+
+    def findATR(self, prevClose, high, low,):
+
+        self.ATR = (self.ATR * (self.ATR_WINDOW_SIZE - 1) + max(high - low, abs(high - prevClose), abs(low - prevClsoe))) / self.ATR_WINDOW_SIZE
+
+
+        return self.ATR
+        
 
     #purpose: function that processes new data
     def process_price_event(self, price):
@@ -262,7 +274,7 @@ class Renko:
                         ############
                         if len(self.renko_data) > prevLen:
                             ###### buy!!!
-                            print("buy")
+                            self.buyAction()
 
                     # remove first element & add next
                     if i + 1 < len(renko_bricks):
@@ -275,8 +287,8 @@ class Renko:
                         match = True
                         ############
                         if len(self.renko_data) > prevLen:
-                               ####### sell!!!
-                               print("sell")
+                            ####### sell!!!
+                            self.sellAction()
                         
                     # no pattern
                     if not match:
@@ -285,16 +297,14 @@ class Renko:
 
     # purpospe: this function may be implemented to purchase as it is called on a buy action
     def buyAction(self):
-        print("*" * 100)
         print("BUY")
-        print("*" * 100)
+
 
 
     # purpospe: this function may be implemented to sell as it is called on a sell action
     def sellAction(self):
-        print("*" * 100)
         print("SELL")
-        print("*" * 100)
+
 
         
         
@@ -302,7 +312,7 @@ class Renko:
 
     # purpose: this function takes a dataframe and a block size and builds a matplotlib graph
     # signature: plot_renko(df: dataframe, brick_size: int) -> graph
-    def plot_renko(self, fileName ):
+    def plot_renko(self, fileName):
         fig = plt.figure(1)
         fig.clf()
         axes = fig.gca()
@@ -357,8 +367,8 @@ class Renko:
             axes.add_patch(renko)
 
         # set plot size 
-        axes.set_xlim(0, ind + self.BLOCK_SIZE)
-        axes.set_ylim(minPrevNum - int(minPrevNum * .5), maxPrevNum + int(maxPrevNum * .5))
+        axes.set_xlim(0, ind + self.BLOCK_SIZE + (ind * .1))
+        axes.set_ylim(minPrevNum - int(minPrevNum * .75), maxPrevNum + int(maxPrevNum * .75))
 
         
         plt.savefig(fileName)
@@ -414,32 +424,44 @@ if __name__ == "__main__":
     # Chart building resources:
     # https://avilpage.com/2018/01/how-to-plot-renko-charts-with-python.html
     
-    # notes on data streams:
-    #   "URC/NYSE_ADV" : gets NYSE: number of stocks with prices advaancing data from Unicorn research corporation
-    #   "FRED/M1109BUSM293NNBR" : gets DOW JOnes industrial
+   
     
 
-    BRICK_SIZE = 2
+   # nyse_df = get_quandl_data("URC/NYSE_ADV")
+   # dow_df = get_quandl_data("FRED/M1109BUSM293NNBR")
+   # nse_df = get_quandl_data("NSE/IBULISL")
+
+
+
+
     
-
-    nyse_df = get_quandl_data("URC/NYSE_ADV")
-    dow_df = get_quandl_data("FRED/M1109BUSM293NNBR")
-    nse_df = get_quandl_data("NSE/IBULISL")
-
     nse_df = get_quandl_data("NSE/IBULISL")
     clean_data = []
+    
     # [high, low close]
-    for index, row in nse_df.iterrows():
+    for day, row in nse_df.iterrows():
         clean_data.append([row['High'], row['Low'], row['Close']])
-        
-        r = Renko(10)
-        
-        for event in clean_data:
-            r.process_price_event(event[2])
-            
 
-            print("*" * 100)
-        print(r.getRenkoData())
+        
+        
+    r = Renko(10)
+    ATR_WINDOW = 10
+    i = 0
+    first_call = True
+
+    
+    for event in clean_data:
+        if i > 10:
+            if first_call == True:
+                r.findFirstATR(clean_data, ATR_WINDOW)
+            else:
+                r.findATR(clean_data, clean_data[i][2], clean_data[i][0], clean_data[i][1])
+        
+        r.process_price_event(event[2])
+        i += 1
+
+            
+    r.plot_renko("nse_with_atr.png")
         
 
 
