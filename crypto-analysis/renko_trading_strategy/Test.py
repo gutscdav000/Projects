@@ -591,13 +591,32 @@ class TestRenko(unittest.TestCase):
             
         
             
-        print("*" * 100)
-        print(str(len(r_t.getRenkoData())))
-        print("constructor", r_t.getRenkoData())
-        print("*" * 100)
-        print(str(len(r.getRenkoData())))
-        print("real-time", r.getRenkoData())
+        self.assertEqual(r.getRawData(), r_t.getRawData())
+        self.assertEqual(r.getRenkoData(), r_t.getRenkoData())
 
+
+
+    def test_process_price_event_with_ATR(self):
+        
+        nse_df = self.get_quandl_data("NSE/IBULISL")
+        clean_data = []
+        # [high, low close]
+        for index, row in nse_df.iterrows():
+            clean_data.append([row['High'], row['Low'], row['Close']])
+
+
+        #just price
+        price = [item[2] for item in clean_data]
+        price_ar = np.array(price)    
+            
+        r = Renko(10)
+        r_t = Renko(10, price_ar)
+        
+        for event in clean_data:
+            r.process_price_event(event[2])
+            
+        
+            
         self.assertEqual(r.getRawData(), r_t.getRawData())
         self.assertEqual(r.getRenkoData(), r_t.getRenkoData())
 
