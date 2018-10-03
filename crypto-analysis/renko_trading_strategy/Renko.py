@@ -367,8 +367,8 @@ class Renko:
             axes.add_patch(renko)
 
         # set plot size 
-        axes.set_xlim(0, ind + self.BLOCK_SIZE + (ind * .1))
-        axes.set_ylim(minPrevNum - int(minPrevNum * .75), maxPrevNum + int(maxPrevNum * .75))
+        axes.set_xlim(0, ind + self.BLOCK_SIZE)
+        axes.set_ylim(minPrevNum - int(abs(minPrevNum * .75)), maxPrevNum + int(maxPrevNum * .75))
 
         
         plt.savefig(fileName)
