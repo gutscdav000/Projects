@@ -2,12 +2,6 @@
 #   author: David Gutsch
 #   date:   09/26/2018
 
-#class
-# auxiliary funcions already written
-# dataframe field
-# historical buy / sell trading data
-# real_time function for trading. uses function callback for specific api calls, also adds new data to existing dataframe
-
 
 
 import pandas as pd
@@ -34,8 +28,6 @@ class Renko:
     # block_magnitude = price_difference / BLOCK_SIZE
     #self.raw_data
 
-    # list of tuples containing renko blocks (renko_block: 1 or -1, action None or "buy" or "sell")
-    #self.renko_data
 
     ###################################
     #Constructor
@@ -130,14 +122,18 @@ class Renko:
 
 
     #purpose: return the raw data list
+    #signiture: getRawData() -> self.raw_data
     def getRawData(self):
         return self.raw_data
-
-        
+    
+    
     #purpose: return the renko data list
+    #signiture: getRenkoData() -> self.renko_data
     def getRenkoData(self):
         return self.renko_data
 
+    #purpose: reset BLOCK_SIZE field
+    # signiture: setBlockSize(size:int) -> updates self.BLOCK_SIZE
     def setBlockSize(self, size):
         self.BLOCK_SIZE = size
 
@@ -174,10 +170,10 @@ class Renko:
         os.chdir('../')
         return df
 
-    #purpose: this function finds the average true range for a period given a Current High, Current Low, Previous Close data set
-    # signature: findATR(dataSet: nested list, widnowSize: int, setToBlockSize: bool) -> ATR block size value
+    #purpose: this function finds the average true range for the first ATR 
+    # signature: findFirstATR(dataSet: nested list, widnowSize: int) -> ATR : float (also updates self.ATR, and sets self.ATR_WINDOW_SIZE for future findATR calls)
     # dataset: list where each inex is a list of the following values for the day: [High, Low, CLose]
-    # windowStart, windowEnd: the range of the dataset that you want to find the ATR of 
+    # windowSize: the size of the interval over which ATR is being calculated
     def findFirstATR(self, dataSet, windowSize):
         trueValueAccum = 0
 
@@ -193,8 +189,9 @@ class Renko:
         
 
         return ATR
-
-
+    
+    #purpose: this function finds the average true range for every value after the first window range
+    #signature:  findATR( prevClose: float, high: float, low: float) -> ATR : float (also updates self.ATR)
     def findATR(self, prevClose, high, low,):
 
         self.ATR = (self.ATR * (self.ATR_WINDOW_SIZE - 1) + max(high - low, abs(high - prevClose), abs(low - prevClsoe))) / self.ATR_WINDOW_SIZE
@@ -203,21 +200,23 @@ class Renko:
         return self.ATR
         
 
-    #purpose: function that processes new data
+    #purpose: function that processes new data 
+    #signiture: process_price_event(price: float) -> adds values to self.raw_data and self.renko_data
     def process_price_event(self, price):
+        # base, if there is not any data yet, there is no difference, etc.
         i = len(self.raw_data)
         if i == 0:
             self.raw_data.append([price, 0, 0])
             return
 
         else:
-
+            # find difference and renko_magnitude
             diff = price - self.raw_data[-1][0]
             renko_mag = (price - self.raw_data[-1][0]) / self.BLOCK_SIZE
         
             self.raw_data.append([price, diff , renko_mag])
 
-            
+            # find how many renko bricks there will be
             bricks = []
             if renko_mag > 0:
                 bricks.extend([1] * int(math.floor(renko_mag)))
@@ -226,7 +225,7 @@ class Renko:
 
 
 
-            # if len > 0 add to renko_data otherwise don't
+            # if len > 0 add to renko_data otherwise there is nothing to do
             if len(bricks) == 0:
                 return
 
@@ -253,6 +252,7 @@ class Renko:
 
 
 
+            # determine if there is a buy or sell action
             rolling_window = []    
             # evaluate and build up renko_data
             for i in range(len(renko_bricks)):
@@ -296,12 +296,16 @@ class Renko:
  
 
     # purpospe: this function may be implemented to purchase as it is called on a buy action
+    # NOTE: must be integrated with trading API
+    # signiture: buyAction() -> ???
     def buyAction(self):
         print("BUY")
 
 
 
     # purpospe: this function may be implemented to sell as it is called on a sell action
+    # NOTE: must be integrated with trading API
+    # signiture: buyAction() -> ???
     def sellAction(self):
         print("SELL")
 
@@ -310,8 +314,8 @@ class Renko:
         
                         
 
-    # purpose: this function takes a dataframe and a block size and builds a matplotlib graph
-    # signature: plot_renko(df: dataframe, brick_size: int) -> graph
+    # purpose: this function takes renko_data and builds a matplotlib graph
+    # signature: plot_renko(fileName: string) -> graph
     def plot_renko(self, fileName):
         fig = plt.figure(1)
         fig.clf()
