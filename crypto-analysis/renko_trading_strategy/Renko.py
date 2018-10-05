@@ -438,33 +438,42 @@ if __name__ == "__main__":
 
 
 
-    
+   # pulling historical data
     nse_df = get_quandl_data("NSE/IBULISL")
     clean_data = []
-    
+
+    #organizing clean_data into nested list of the following structure:
     # [high, low close]
     for day, row in nse_df.iterrows():
         clean_data.append([row['High'], row['Low'], row['Close']])
 
+
         
         
+    #creating the renko object passing it original block size
     r = Renko(10)
+    # the window size for ATR calculation
     ATR_WINDOW = 10
     i = 0
     first_call = True
-
     
+    # this is the simulation of real time data collection
+    # each iteration represents the collection of 1 real-time data point
     for event in clean_data:
+        # don't calculate ATR until you can fill the ATR_window
         if i > 10:
             if first_call == True:
                 r.findFirstATR(clean_data, ATR_WINDOW)
-            else:
+            # after the first time it has been filled calculate atr based off of the previous value
+            else: 
                 r.findATR(clean_data, clean_data[i][2], clean_data[i][0], clean_data[i][1])
-        
+
+        # this function processes the price and adds it to self.raw_data and self.renko_data
         r.process_price_event(event[2])
         i += 1
+        
 
-            
+    #this method plots the graph of renko bricks (green & red indicate direction. blue and orange indicate trade action
     r.plot_renko("nse_with_atr.png")
         
 
