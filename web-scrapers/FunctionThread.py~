@@ -69,43 +69,22 @@ class FunctionThread (threading.Thread):
             self.obj = re.search("(?<=<p>).+?(?=</p>)", objective_div, re.DOTALL).group()[11:].strip()
         except: 
             pass
-            
-        p_tags = soup.find('div', {'class' : r'topic-body topic-box autolink'}).find_all('p')
-
-        desc=p_tags[1].text[13:].strip()
-
-        P1=p_tags[2].text[9:].strip()
-    
-
-        P2=p_tags[3].text[10:].strip()
-
-        try:
-            P3=p_tags[4].text
-        except:
-            pass
         
         try:
-            self.keywords=p_tags[5].text[10:].strip()
-        except:
-            pass
+            p_tags = soup.find('div', {'class' : r'topic-body topic-box autolink'}).find_all('p')
+
+            desc=p_tags[1].text[13:].strip()
+
+            P1=p_tags[2].text[9:].strip()
     
 
-        try:
+            P2=p_tags[3].text[10:].strip()
+            P3=p_tags[4].text
+            self.keywords=p_tags[5].text[10:].strip()
             self.TPOC1=p_tags[6].text
             self.TPOC1=re.sub(r'\s+', ' ',self.TPOC1)
-        except:
-            pass
-
-
-        try:
             self.TPOC2=p_tags[7].text
             self.TPOC2=re.sub(r'\s+', ' ',self.TPOC2)
-        except:
-            pass
-
-        try:
-            self.TPOC3=p_tags[8].text
-            self.TPOC3=re.sub(r'\s+', ' ',self.TPOC3)
         except:
             pass
 

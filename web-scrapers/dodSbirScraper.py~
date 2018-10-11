@@ -21,8 +21,6 @@ from selenium import webdriver
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 import urllib.request, os, sys, subprocess, time, re, csv
 
-import FunctionThread
-
 # purpose: a function which takes a url and extracts the contents as a string
 # depends on selenium webdriver to turn js-scripts into html as well as time and os libraries
 # signature: pull_html_page(url:string, write:optional boolean) -> string 

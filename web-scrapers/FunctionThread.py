@@ -18,6 +18,8 @@ class FunctionThread (threading.Thread):
     TPOC2 = "TBH"
     TPOC3 = "TBH"
 
+    # this constructor takes a URL (note: designed for scraping sbir topics, but may be refactored) and 
+    # starts scraping the topic page via the scrape_sbir_page function
     def __init__(self, url):
         self.url = url
         threading.Thread.__init__(self)

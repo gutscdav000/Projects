@@ -1,19 +1,6 @@
 
-###########################################
-##  GOOGLE API INFORMATION
-
-# api key
-# AIzaSyAhgSHgsMtRNAQTndwcukGSSUTFBEVhZag
-
-#client ID  
-# 1073746950594-49gp86s9054449r2ju7o69d699n7o9a4.apps.googleusercontent.com
-
-#client secret
-# 1oM2ZAJxHBTDeMzWb-eDtIUe
-##########################################
-
 #url: https://sbir.defensebusiness.org/topics
-PASSWORD_FOR_SUDO = "ektkntzd"
+PASSWORD_FOR_SUDO = ""
 
 
 from bs4 import BeautifulSoup
