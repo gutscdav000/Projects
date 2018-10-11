@@ -595,7 +595,10 @@ class TestRenko(unittest.TestCase):
         self.assertEqual(r.getRenkoData(), r_t.getRenkoData())
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> a1c7e713062dafd8abab1519d1486bcd59cf20b0
         
     
 if __name__ == '__main__':

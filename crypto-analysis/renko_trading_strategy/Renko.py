@@ -2,12 +2,6 @@
 #   author: David Gutsch
 #   date:   09/26/2018
 
-#class
-# auxiliary funcions already written
-# dataframe field
-# historical buy / sell trading data
-# real_time function for trading. uses function callback for specific api calls, also adds new data to existing dataframe
-
 
 
 import pandas as pd
@@ -34,8 +28,6 @@ class Renko:
     # block_magnitude = price_difference / BLOCK_SIZE
     #self.raw_data
 
-    # list of tuples containing renko blocks (renko_block: 1 or -1, action None or "buy" or "sell")
-    #self.renko_data
 
     ###################################
     #Constructor
@@ -47,7 +39,8 @@ class Renko:
     # signature: Renko(block_size: int, dataStream: numpyArray) 
     def __init__(self, blockSize, dataStream = None):
         self.BLOCK_SIZE = blockSize
-
+        self.ATR = 0
+        
         if dataStream is not None:
 
             # find price diff
@@ -62,7 +55,6 @@ class Renko:
             for i in range(1, len(numpy_data)):
                 self.raw_data.append([numpy_data[i], price_diff[i - 1] , price_diff[i - 1] / self.BLOCK_SIZE])
 
-            #print("raw_data:\n",self.raw_data)
 
             # now organize renko data
             self.renko_data = []
@@ -130,13 +122,20 @@ class Renko:
 
 
     #purpose: return the raw data list
+    #signiture: getRawData() -> self.raw_data
     def getRawData(self):
         return self.raw_data
-
-        
+    
+    
     #purpose: return the renko data list
+    #signiture: getRenkoData() -> self.renko_data
     def getRenkoData(self):
         return self.renko_data
+
+    #purpose: reset BLOCK_SIZE field
+    # signiture: setBlockSize(size:int) -> updates self.BLOCK_SIZE
+    def setBlockSize(self, size):
+        self.BLOCK_SIZE = size
 
     
     # purpose: download and cache a Quandl dataseriews
@@ -171,41 +170,53 @@ class Renko:
         os.chdir('../')
         return df
 
-    #purpose: this function finds the average true range for a period given a Current High, Current Low, Previous Close data set
-    # signature: findATR(dataSet: nested list, widnowSize: int, setToBlockSize: bool) -> ATR block size value
+    #purpose: this function finds the average true range for the first ATR 
+    # signature: findFirstATR(dataSet: nested list, widnowSize: int) -> ATR : float (also updates self.ATR, and sets self.ATR_WINDOW_SIZE for future findATR calls)
     # dataset: list where each inex is a list of the following values for the day: [High, Low, CLose]
-    # windowStart, windowEnd: the range of the dataset that you want to find the ATR of 
-    # setToBlockSize when true resets self.BLOCK_SIZE to the return value of ATR
-    def findATR(self, dataSet, windowStart, windowEnd, setToBlockSize = False):
+    # windowSize: the size of the interval over which ATR is being calculated
+    def findFirstATR(self, dataSet, windowSize):
         trueValueAccum = 0
+
         
-        for i in range(windowStart, windowEnd):
+        for i in range(windowSize):
             #                      ( high - low)                      abs(high - previous close)            abs(low - previous close)
             trueValueAccum += max(dataSet[i][0] - dataSet[i][1], abs(dataSet[i][0] - dataSet[i - 1][2]), abs(dataSet[i][1] - dataSet[i - 1][2]))
 
+
+        ATR = trueValueAccum / windowSize
+        self.ATR = ATR
+        self.ATR_WINDOW_SIZE = windowSize
         
-        ATR = trueValueAccum / (windowEnd - windowStart)
-        
-        if setToBlockSize == True:
-            self.BLOCK_SIZE = int(ATR)
 
         return ATR
+    
+    #purpose: this function finds the average true range for every value after the first window range
+    #signature:  findATR( prevClose: float, high: float, low: float) -> ATR : float (also updates self.ATR)
+    def findATR(self, prevClose, high, low,):
 
-    #purpose: function that processes new data
+        self.ATR = (self.ATR * (self.ATR_WINDOW_SIZE - 1) + max(high - low, abs(high - prevClose), abs(low - prevClsoe))) / self.ATR_WINDOW_SIZE
+
+
+        return self.ATR
+        
+
+    #purpose: function that processes new data 
+    #signiture: process_price_event(price: float) -> adds values to self.raw_data and self.renko_data
     def process_price_event(self, price):
+        # base, if there is not any data yet, there is no difference, etc.
         i = len(self.raw_data)
         if i == 0:
             self.raw_data.append([price, 0, 0])
             return
 
         else:
-
+            # find difference and renko_magnitude
             diff = price - self.raw_data[-1][0]
             renko_mag = (price - self.raw_data[-1][0]) / self.BLOCK_SIZE
         
             self.raw_data.append([price, diff , renko_mag])
 
-            
+            # find how many renko bricks there will be
             bricks = []
             if renko_mag > 0:
                 bricks.extend([1] * int(math.floor(renko_mag)))
@@ -214,7 +225,7 @@ class Renko:
 
 
 
-            # if len > 0 add to renko_data otherwise don't
+            # if len > 0 add to renko_data otherwise there is nothing to do
             if len(bricks) == 0:
                 return
 
@@ -241,6 +252,7 @@ class Renko:
 
 
 
+            # determine if there is a buy or sell action
             rolling_window = []    
             # evaluate and build up renko_data
             for i in range(len(renko_bricks)):
@@ -262,7 +274,7 @@ class Renko:
                         ############
                         if len(self.renko_data) > prevLen:
                             ###### buy!!!
-                            print("buy")
+                            self.buyAction()
 
                     # remove first element & add next
                     if i + 1 < len(renko_bricks):
@@ -275,8 +287,8 @@ class Renko:
                         match = True
                         ############
                         if len(self.renko_data) > prevLen:
-                               ####### sell!!!
-                               print("sell")
+                            ####### sell!!!
+                            self.sellAction()
                         
                     # no pattern
                     if not match:
@@ -284,25 +296,27 @@ class Renko:
  
 
     # purpospe: this function may be implemented to purchase as it is called on a buy action
+    # NOTE: must be integrated with trading API
+    # signiture: buyAction() -> ???
     def buyAction(self):
-        print("*" * 100)
         print("BUY")
-        print("*" * 100)
+
 
 
     # purpospe: this function may be implemented to sell as it is called on a sell action
+    # NOTE: must be integrated with trading API
+    # signiture: buyAction() -> ???
     def sellAction(self):
-        print("*" * 100)
         print("SELL")
-        print("*" * 100)
+
 
         
         
                         
 
-    # purpose: this function takes a dataframe and a block size and builds a matplotlib graph
-    # signature: plot_renko(df: dataframe, brick_size: int) -> graph
-    def plot_renko(self, fileName ):
+    # purpose: this function takes renko_data and builds a matplotlib graph
+    # signature: plot_renko(fileName: string) -> graph
+    def plot_renko(self, fileName):
         fig = plt.figure(1)
         fig.clf()
         axes = fig.gca()
@@ -358,7 +372,7 @@ class Renko:
 
         # set plot size 
         axes.set_xlim(0, ind + self.BLOCK_SIZE)
-        axes.set_ylim(minPrevNum - int(minPrevNum * .5), maxPrevNum + int(maxPrevNum * .5))
+        axes.set_ylim(minPrevNum - int(abs(minPrevNum * .75)), maxPrevNum + int(maxPrevNum * .75))
 
         
         plt.savefig(fileName)
@@ -414,24 +428,50 @@ if __name__ == "__main__":
     # Chart building resources:
     # https://avilpage.com/2018/01/how-to-plot-renko-charts-with-python.html
     
-    # notes on data streams:
-    #   "URC/NYSE_ADV" : gets NYSE: number of stocks with prices advaancing data from Unicorn research corporation
-    #   "FRED/M1109BUSM293NNBR" : gets DOW JOnes industrial
+   
     
 
-    BRICK_SIZE = 2
+   # nyse_df = get_quandl_data("URC/NYSE_ADV")
+   # dow_df = get_quandl_data("FRED/M1109BUSM293NNBR")
+   # nse_df = get_quandl_data("NSE/IBULISL")
+
+
+
+
     
-
-    nyse_df = get_quandl_data("URC/NYSE_ADV")
-    dow_df = get_quandl_data("FRED/M1109BUSM293NNBR")
-    nse_df = get_quandl_data("NSE/IBULISL")
-
     nse_df = get_quandl_data("NSE/IBULISL")
 
     clean_data = []
+    
     # [high, low close]
-    for index, row in nse_df.iterrows():
+    for day, row in nse_df.iterrows():
         clean_data.append([row['High'], row['Low'], row['Close']])
+<<<<<<< HEAD
+=======
+
+        
+        
+    r = Renko(10)
+    ATR_WINDOW = 10
+    i = 0
+    first_call = True
+
+    
+    for event in clean_data:
+        if i > 10:
+            if first_call == True:
+                r.findFirstATR(clean_data, ATR_WINDOW)
+            else:
+                r.findATR(clean_data, clean_data[i][2], clean_data[i][0], clean_data[i][1])
+        
+        r.process_price_event(event[2])
+        i += 1
+
+            
+    r.plot_renko("nse_with_atr.png")
+        
+
+>>>>>>> a1c7e713062dafd8abab1519d1486bcd59cf20b0
 
 
         #just price
