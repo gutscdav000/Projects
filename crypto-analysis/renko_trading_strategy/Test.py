@@ -11,7 +11,7 @@ class TestRenko(unittest.TestCase):
     
     # assertion test functions:
     # self.assertEqual(), self.assertTrue(), self.assertFalse(), self.assertRaises(Error), assertNotEqual, assertIs(a, b)
-    #assertIsNot(a,b) assertIsNone(), assertIsNotNone(), asertIn(a,b), assertNotInt(), assertIsInstance(), assertNotIsInstance()
+    #assertIsNot(a,b) assertIsNone(), assertIsNotNone(), assertIn(a,b), assertNotInt(), assertIsInstance(), assertNotIsInstance()
     #
     # assert something.name is not None or assert func(10) == 42
 
